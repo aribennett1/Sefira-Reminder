@@ -1,3 +1,4 @@
+```
 function main() {
   var d = new Date();
   if (d.getDay() == 5) /*Don't send email reminders on Shabbos*/ { 
@@ -48,4 +49,4 @@ function addDays(date, days) {
   result.setDate(result.getDate() + days);
   return result;
 }
-
+```
