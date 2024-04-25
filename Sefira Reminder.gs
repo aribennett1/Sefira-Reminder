@@ -3,45 +3,26 @@ function main() {
   if (d.getDay() == 5) /*Don't send email reminders on Shabbos*/ { 
     return;
   }
-  d = addDays(d, 1); // get that NIGHT'S number, which will be the next day (changes at 12:00, not shkiya)
-  var hebcalDay = getHebcalDay(d);
-  var sefirahDay = getSefiraDay(hebcalDay);
-  console.log("SefiraDay: " + sefirahDay);
-  if (sefirahDay == "{\"ti") /*This is what the function returns when there's no sefira*/ {
+  var hebcalJSON = getSefiraDay(getHebcalDay(addDays(d, 1))); // get that NIGHT'S number, which will be the next day (changes at 12:00, not shkiya)
+  console.log("SefiraDay: " + JSON.stringify(hebcalJSON));
+  if (hebcalJSON.items.length === 0) {
     console.log("No sefirah today");
-    return; //This is the equivalent of System.exit(0)
+    return;
   }
   else {
     var yesterdayEmail = GmailApp.search("subject: sefira reminder ");
     for (var email in yesterdayEmail) {
       yesterdayEmail[email].moveToTrash();
     }
-    GmailApp.sendEmail(Session.getActiveUser().getEmail(), "Sefira Reminder", `Remember to count Sefira! Tonight is night ${sefirahDay}`});
+    GmailApp.sendEmail(Session.getActiveUser().getEmail(), "Sefira Reminder", `Remember to count Sefira! Tonight is night ${hebcalJSON.items[0].title_orig.replaceAll("Omer ", "")}`});
   }
 }
 
-function getSefiraDay(today) {
-  var hebcal =  UrlFetchApp.fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=off&min=off&mod=off&nx=off&start=${today}&end=${today}&ss=off&lg=a&mf=off&c=off&M=off&s=off&o=on`).getContentText();
-  return hebcal.substring(hebcal.indexOf("Omer ") + 5, hebcal.indexOf("hebrew") - 3);
+function getSefiraDay(day) {
+  return JSON.parse(UrlFetchApp.fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=off&min=off&mod=off&nx=off&start=${day}&end=${day}&ss=off&lg=a&mf=off&c=off&M=off&s=off&o=on`).getContentText());
 }
 
-function getHebcalDay(d) {
-  var day = d.getDate();
-  day = addLeadingZeroIfLenIsOne(day);
-  let month = d.getMonth() + 1; //Google's months are 0-11, HebCal's months are 1-12, so +1 to Google's month for use in Hebcal
-  month = addLeadingZeroIfLenIsOne(month);
-  let year = d.getFullYear();
-  var hebcalDay = `${year}-${month}-${day}`;
-  // console.log(`hebcalDay: ${hebcalDay}`);
-  return hebcalDay;
-}
-
-function addLeadingZeroIfLenIsOne(num) {
-if (num.toString().length == 1) {
-    num = "0" + num;
-  }
-  return num;
-}
+const getHebcalDay = d => `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
 
 function addDays(date, days) {
   var result = new Date(date);
